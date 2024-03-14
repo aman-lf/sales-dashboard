@@ -22,6 +22,8 @@ func Start() {
 
 	addAPIRoutes(router)
 
+	ProcessFiles()
+
 	router.Run(fmt.Sprintf("%s:%s", config.Cfg.Host, config.Cfg.Port))
 }
 

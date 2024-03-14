@@ -15,7 +15,9 @@ type Config struct {
 	Host     string
 	Mode     string
 	MongoURI string
+	DBName   string
 	AppURL   string
+	FilePath string
 }
 
 func init() {
@@ -39,6 +41,8 @@ func loadConfig() {
 		Host:     os.Getenv("HOST"),
 		Mode:     os.Getenv("MODE"),
 		MongoURI: os.Getenv("MONGO_URI"),
+		DBName:   os.Getenv("DB_NAME"),
 		AppURL:   os.Getenv("APP_URL"),
+		FilePath: os.Getenv("FILE_PATH"),
 	}
 }
