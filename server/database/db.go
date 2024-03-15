@@ -36,13 +36,20 @@ func ConnectDB() {
 	createUniqueIndex()
 }
 
-func InsertOne(collectionName string, data interface{}) error {
+func InsertOne(ctx context.Context, collectionName string, data interface{}) error {
 	collection := client.Database(config.Cfg.DBName).Collection(collectionName)
 
-	_, err := collection.InsertOne(context.Background(), data)
+	_, err := collection.InsertOne(ctx, data)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func Find(ctx context.Context, collectionName string, filter interface{}, findOption *options.FindOptions) (*mongo.Cursor, error) {
+	db := client.Database(config.Cfg.DBName)
+	collection := db.Collection(collectionName)
+
+	return collection.Find(ctx, filter, findOption)
 }

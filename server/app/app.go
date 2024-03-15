@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/aman-lf/sales-server/config"
+	"github.com/aman-lf/sales-server/controller"
 	"github.com/aman-lf/sales-server/database"
 	"github.com/aman-lf/sales-server/middleware"
 	"github.com/gin-gonic/gin"
@@ -28,9 +29,14 @@ func Start() {
 }
 
 func addAPIRoutes(router *gin.Engine) {
-	router.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Welcome to Sales Dashboard server!",
-		})
+	router.GET("/", welcomeFunc)
+
+	controller.SetupProductRoute(router)
+	controller.SetupsaleRoute(router)
+}
+
+func welcomeFunc(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome to Sales Dashboard server!",
 	})
 }

@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"os"
@@ -65,7 +66,7 @@ func processSalesData(filepath string) error {
 			}
 		}
 
-		database.InsertOne(sale.CollectionName(), sale)
+		database.InsertOne(context.Background(), sale.CollectionName(), sale)
 	}
 
 	return nil
