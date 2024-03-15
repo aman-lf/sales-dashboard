@@ -10,6 +10,7 @@ import (
 
 	"github.com/aman-lf/sales-server/database"
 	"github.com/aman-lf/sales-server/model"
+	"github.com/aman-lf/sales-server/service"
 	"github.com/aman-lf/sales-server/utils"
 )
 
@@ -22,11 +23,12 @@ func ProcessProducts(path string) {
 
 		filePath := filepath.Join(path, filename)
 		err := processProductData(filePath)
-
 		if err != nil {
 			i--
 			time.Sleep(time.Duration(sleepTime) * time.Second)
 		}
+
+		service.NewSSEController().TriggerEvent("New data is available! Please refresh the page.")
 	}
 }
 
