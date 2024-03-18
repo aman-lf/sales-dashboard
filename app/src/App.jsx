@@ -1,10 +1,9 @@
-import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import Brand from './views/Brand';
-import Product from './views/products/Product';
-import AppLayout from './components/layout/AppLayout';
+import Product from './views/Products';
+import AppLayout from './components/Layout/AppLayout';
 
 import { PATHS } from './constants/routes';
 import { queryClient } from './config/react-query.config';

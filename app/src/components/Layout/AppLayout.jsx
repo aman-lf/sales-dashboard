@@ -1,16 +1,14 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState } from 'react';
+import { Outlet, useOutletContext } from 'react-router-dom';
 
-import { Outlet, useOutletContext } from "react-router-dom";
+import Sidebar from '../Sidebar/Sidebar';
 
-type ContextType = {
-  hideSidebar: Function;
-  showToast: Function;
-};
+import './layout.scss';
 
 const AppLayout = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const [toastProps, setToastProps] = useState({
-    message: "",
+    message: '',
     open: false,
   });
 
@@ -18,31 +16,29 @@ const AppLayout = () => {
     setShowSidebar(false);
   };
 
-  const showToast = (message: string, autoCloseDuration: number = 3000) => {
+  const showToast = (message, autoCloseDuration = 3000) => {
     setToastProps({
       message,
       open: true,
     });
 
     const timeout = setTimeout(() => {
-      setToastProps({ open: false, message: "" });
+      setToastProps({ open: false, message: '' });
     }, autoCloseDuration);
   };
 
   return (
-    <div className='Main__container-wrapper'>
+    <div className='main'>
       {/* <Toast open={toastProps.open} message={toastProps.message} /> */}
 
-      {/* {showSidebar ? (
-        <Profile name={user?.name} avatar={user?.picture} />
-      ) : null} */}
+      {showSidebar ? <Sidebar /> : null}
       <Outlet context={{ hideSidebar, showToast }} />
     </div>
   );
 };
 
 export function useLayoutContext() {
-  return useOutletContext<ContextType>();
+  return useOutletContext();
 }
 
 export default AppLayout;

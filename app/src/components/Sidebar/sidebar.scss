@@ -1,0 +1,32 @@
+@import '@sass/helpers/mixins';
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 225px;
+  height: 100vh;
+  padding: 16px;
+  background: #072b63;
+  border-radius: 0 16px 16px 0;
+  color: white;
+
+  @include e(header) {
+    display: flex;
+    margin: 16px 0;
+    border-bottom: 1px white solid;
+    padding-bottom: 12px;
+    cursor: pointer;
+  }
+
+  @include e(logo) {
+    width: 20px;
+    margin-right: 12px;
+  }
+
+  @include e(item) {
+    display: flex;
+
+    margin: 12px 0;
+    cursor: pointer;
+  }
+}
