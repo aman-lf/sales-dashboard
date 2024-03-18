@@ -53,3 +53,10 @@ func Find(ctx context.Context, collectionName string, filter interface{}, findOp
 
 	return collection.Find(ctx, filter, findOption)
 }
+
+func FindAggregate(ctx context.Context, collectionName string, pipeline interface{}) (*mongo.Cursor, error) {
+	db := client.Database(config.Cfg.DBName)
+	collection := db.Collection(collectionName)
+
+	return collection.Aggregate(ctx, pipeline)
+}

@@ -8,8 +8,7 @@ import (
 )
 
 func SetupProductRoute(router *gin.Engine) {
-	r := router.Group("/api/product")
-	r.GET("/", GetProductsHandler)
+	router.GET("/api/product", GetProductsHandler)
 }
 
 func GetProductsHandler(c *gin.Context) {
@@ -23,7 +22,7 @@ func GetProductsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"products": products,
-		"message":  "Successfully retrieved products",
+		"data":    products,
+		"message": "Successfully retrieved products",
 	})
 }

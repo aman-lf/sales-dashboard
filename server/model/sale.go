@@ -15,6 +15,24 @@ type Sale struct {
 	TransactionDate        time.Time          `json:"transaction_date" bson:"transaction_date"`
 }
 
+type SalesByProduct struct {
+	ProductId         string  `json:"id,omitempty" bson:"product_id,omitempty"`
+	ProductName       string  `json:"product_name" bson:"product_name"`
+	BrandName         string  `json:"brand_name" bson:"brand_name"`
+	Category          string  `json:"category" bson:"category"`
+	TotalQuantitySold float64 `json:"total_quantity_sold" bson:"total_quantity_sold"`
+	TotalRevenue      float64 `json:"total_revenue" bson:"total_revenue"`
+	TotalProfit       float64 `json:"total_profit" bson:"total_profit"`
+}
+
+type SalesByBrand struct {
+	BrandName         string  `json:"brand_name" bson:"brand_name"`
+	MostSoldProduct   string  `json:"most_sold_product" bson:"most_sold_product"`
+	TotalQuantitySold float64 `json:"total_quantity_sold" bson:"total_quantity_sold"`
+	TotalRevenue      float64 `json:"total_revenue" bson:"total_revenue"`
+	TotalProfit       float64 `json:"total_profit" bson:"total_profit"`
+}
+
 func (s Sale) CollectionName() string {
 	return "sale"
 }

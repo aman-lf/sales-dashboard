@@ -1,12 +1,14 @@
 import React from 'react';
 
-import Sales from '../Sales';
+import Sales from '../Sales/Sales';
 
-const Brand = () => {
-  const api = '/api/sale-brand';
+const Product = () => {
+  const api = '/api/sale-product';
   const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'product_name', label: 'Product Name' },
     { key: 'brand_name', label: 'Brand Name' },
-    { key: 'most_sold_product', label: 'Most Sold Product' },
+    { key: 'category', label: 'Category' },
     { key: 'total_quantity_sold', label: 'Total Quantity Sold' },
     { key: 'total_revenue', label: 'Total Revenue' },
     { key: 'total_profit', label: 'Total Profit' },
@@ -15,4 +17,4 @@ const Brand = () => {
   return <Sales title={'Sales By Product'} api={api} columns={columns} />;
 };
 
-export default Brand;
+export default Product;

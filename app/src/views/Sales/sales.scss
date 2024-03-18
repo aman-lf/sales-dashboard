@@ -1,0 +1,10 @@
+@import '@sass/helpers/mixins';
+
+.sales {
+  padding: 32px;
+  flex: 1;
+
+  @include e(title) {
+    margin-bottom: 16px;
+  }
+}
