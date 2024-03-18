@@ -33,6 +33,7 @@ func addAPIRoutes(router *gin.Engine) {
 
 	controller.SetupProductRoute(router)
 	controller.SetupsaleRoute(router)
+	controller.SetupNotificationRoute(router)
 }
 
 func welcomeFunc(c *gin.Context) {

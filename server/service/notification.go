@@ -1,39 +1,38 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
-type SSEController struct {
-	clients map[*gin.Context]struct{}
-	mutex   sync.Mutex
-}
+var (
+	messageChannel = make(chan string)
+)
 
-func NewSSEController() *SSEController {
-	return &SSEController{
-		clients: make(map[*gin.Context]struct{}),
+func SetupSSEMessage(c *gin.Context) {
+	flusher, _ := c.Writer.(http.Flusher)
+
+	// Send an initial empty message to connect client
+	fmt.Fprintf(c.Writer, "data: %s\n\n", `{"message": ""}`)
+	flusher.Flush()
+
+	for {
+		select {
+		case message := <-messageChannel:
+			fmt.Fprintf(c.Writer, "data: %s\n\n", `{"message": "`+message+`"}`)
+			flusher.Flush()
+		case <-c.Writer.CloseNotify():
+			// Exit loop if client disconnected
+			return
+		}
 	}
 }
 
-func (c *SSEController) AddClient(ctx *gin.Context) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.clients[ctx] = struct{}{}
-}
-
-func (c *SSEController) RemoveClient(ctx *gin.Context) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	delete(c.clients, ctx)
-}
-
-func (c *SSEController) TriggerEvent(eventData string) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	for ctx := range c.clients {
-		ctx.Data(http.StatusOK, "text/event-stream", []byte("data: "+eventData+"\n\n"))
+func TriggerSSEMessages(message string) {
+	select {
+	case messageChannel <- message:
+	default:
 	}
 }

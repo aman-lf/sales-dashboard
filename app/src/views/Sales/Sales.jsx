@@ -12,8 +12,6 @@ const Sales = ({ title, api, columns }) => {
     queryFn: () => fetch(`${import.meta.env.VITE_API_URL}${api}`).then((res) => res.json()),
   });
 
-  console.log(import.meta.env.VITE_API_URL, data);
-
   return (
     <div className='sales'>
       <h2 className='sales__title'>{title}</h2>

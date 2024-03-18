@@ -6,20 +6,14 @@ import (
 )
 
 func SetupNotificationRoute(router *gin.Engine) {
-	router.GET("/events", HandleSSEConnection)
+	router.GET("/new-file-notification", SSEConnectionHandler)
 }
 
-func HandleSSEConnection(ctx *gin.Context) {
-	// Set response headers for SSE
+func SSEConnectionHandler(ctx *gin.Context) {
 	ctx.Header("Content-Type", "text/event-stream")
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
+	ctx.Header("Access-Control-Allow-Origin", "*")
 
-	c := service.NewSSEController()
-	// Add client to the list of SSE clients
-	c.AddClient(ctx)
-	defer c.RemoveClient(ctx)
-
-	// Wait indefinitely (or until the client disconnects)
-	<-ctx.Done()
+	service.SetupSSEMessage(ctx)
 }

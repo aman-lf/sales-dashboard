@@ -19,16 +19,16 @@ func ProcessProducts(path string) {
 
 	for i := 1; ; i++ {
 		filename := fmt.Sprintf("products_%d.csv", i)
-		fmt.Println("Reading product file:", filename)
 
 		filePath := filepath.Join(path, filename)
 		err := processProductData(filePath)
 		if err != nil {
 			i--
 			time.Sleep(time.Duration(sleepTime) * time.Second)
+		} else {
+			fmt.Println("Processed product file:", filename)
+			service.TriggerSSEMessages("New data is available! Please refresh the page.")
 		}
-
-		service.NewSSEController().TriggerEvent("New data is available! Please refresh the page.")
 	}
 }
 
