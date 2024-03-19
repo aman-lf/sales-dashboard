@@ -44,14 +44,35 @@ func GetSales(c context.Context, limitStr, offsetStr string) ([]*model.Sale, err
 	return sales, nil
 }
 
-func GetSalesByProduct(c context.Context, limitStr, offsetStr, searchText string) ([]*model.SalesByProduct, error) {
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		limit = 20
-	}
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		offset = 0
+func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model.SalesByProduct, error) {
+	countPipeline := mongo.Pipeline{
+		{{
+			Key: "$lookup",
+			Value: bson.D{
+				{Key: "from", Value: "product"},
+				{Key: "localField", Value: "product_id"},
+				{Key: "foreignField", Value: "product_id"},
+				{Key: "as", Value: "product_info"},
+			},
+		}},
+		{{
+			Key:   "$unwind",
+			Value: "$product_info",
+		}},
+		// Add match filter here
+		{{
+			Key: "$group",
+			Value: bson.D{
+				{Key: "_id", Value: "$product_info.product_id"},
+			},
+		}},
+		{{
+			Key: "$group",
+			Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			},
+		}},
 	}
 
 	pipeline := mongo.Pipeline{
@@ -87,9 +108,9 @@ func GetSalesByProduct(c context.Context, limitStr, offsetStr, searchText string
 					}}}}},
 			}},
 		},
-		{{Key: "$sort", Value: bson.D{{Key: "product_id", Value: 1}}}},
-		{{Key: "$skip", Value: offset}},
-		{{Key: "$limit", Value: limit}},
+		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
+		{{Key: "$skip", Value: filter.Offset}},
+		{{Key: "$limit", Value: filter.Limit}},
 		{{
 			Key: "$project",
 			Value: bson.D{
@@ -105,20 +126,55 @@ func GetSalesByProduct(c context.Context, limitStr, offsetStr, searchText string
 		},
 	}
 
-	if searchText != "" {
-		matchFilter := bson.D{
-			{Key: "$or", Value: bson.A{
-				bson.D{{Key: "product_name", Value: bson.D{{
-					Key:   "$regex",
-					Value: primitive.Regex{Pattern: searchText, Options: "i"}}}}},
-				bson.D{{Key: "brand_name", Value: bson.D{{
-					Key: "$regex", Value: primitive.Regex{Pattern: searchText, Options: "i"}}}}},
-				bson.D{{Key: "category", Value: bson.D{{
-					Key: "$regex", Value: primitive.Regex{Pattern: searchText, Options: "i"}}}}},
-			}},
-		}
+	filter.SearchText = "Sindee"
+	if filter.SearchText != "" {
+		countMatchFilter := bson.D{{
+			Key: "$match",
+			Value: bson.D{
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "product_info.product_name", Value: bson.D{{
+						Key:   "$regex",
+						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+					bson.D{{Key: "product_info.brand_name", Value: bson.D{{
+						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+					bson.D{{Key: "product_info.category", Value: bson.D{{
+						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+				}},
+			},
+		}}
+		insertIndex := 2
+		countPipeline = append(countPipeline[:insertIndex], append([]bson.D{countMatchFilter}, countPipeline[insertIndex:]...)...)
 
-		pipeline = append(pipeline, bson.D{{Key: "$match", Value: matchFilter}})
+		matchFilter := bson.D{{
+			Key: "$match",
+			Value: bson.D{
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "product_name", Value: bson.D{{
+						Key:   "$regex",
+						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+					bson.D{{Key: "brand_name", Value: bson.D{{
+						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+					bson.D{{Key: "category", Value: bson.D{{
+						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+				}},
+			},
+		}}
+		pipeline = append(pipeline, matchFilter)
+	}
+
+	countCursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), countPipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer countCursor.Close(c)
+
+	var countResult struct {
+		Count int `bson:"count"`
+	}
+	for countCursor.Next(c) {
+		if err := countCursor.Decode(&countResult); err != nil {
+			return nil, err
+		}
 	}
 
 	cursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), pipeline)
@@ -139,14 +195,35 @@ func GetSalesByProduct(c context.Context, limitStr, offsetStr, searchText string
 	return sales, nil
 }
 
-func GetSalesByBrand(c context.Context, limitStr, offsetStr, searchText string) ([]*model.SalesByBrand, error) {
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		limit = 20
-	}
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		offset = 0
+func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.SalesByBrand, error) {
+	countPipeline := mongo.Pipeline{
+		{{
+			Key: "$lookup",
+			Value: bson.D{
+				{Key: "from", Value: "product"},
+				{Key: "localField", Value: "product_id"},
+				{Key: "foreignField", Value: "product_id"},
+				{Key: "as", Value: "product_info"},
+			},
+		}},
+		{{
+			Key:   "$unwind",
+			Value: "$product_info",
+		}},
+		// Add match filter here
+		{{
+			Key: "$group",
+			Value: bson.D{
+				{Key: "_id", Value: "$product_info.brand_name"},
+			},
+		}},
+		{{
+			Key: "$group",
+			Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			},
+		}},
 	}
 
 	pipeline := mongo.Pipeline{
@@ -177,9 +254,9 @@ func GetSalesByBrand(c context.Context, limitStr, offsetStr, searchText string) 
 					}}}}},
 			},
 		}},
-		{{Key: "$sort", Value: bson.D{{Key: "_id", Value: 1}}}},
-		{{Key: "$skip", Value: offset}},
-		{{Key: "$limit", Value: limit}},
+		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
+		{{Key: "$skip", Value: filter.Offset}},
+		{{Key: "$limit", Value: filter.Limit}},
 		{{
 			Key: "$project",
 			Value: bson.D{
@@ -193,20 +270,51 @@ func GetSalesByBrand(c context.Context, limitStr, offsetStr, searchText string) 
 		}},
 	}
 
-	if searchText != "" {
-		matchFilter := bson.D{
-			{Key: "$or", Value: bson.A{
-				bson.D{{Key: "product_name", Value: bson.D{{
-					Key:   "$regex",
-					Value: primitive.Regex{Pattern: searchText, Options: "i"}}}}},
-				bson.D{{Key: "brand_name", Value: bson.D{{
-					Key: "$regex", Value: primitive.Regex{Pattern: searchText, Options: "i"}}}}},
-				bson.D{{Key: "category", Value: bson.D{{
-					Key: "$regex", Value: primitive.Regex{Pattern: searchText, Options: "i"}}}}},
-			}},
-		}
+	filter.SearchText = "Atonsah"
+	if filter.SearchText != "" {
+		countMatchFilter := bson.D{{
+			Key: "$match",
+			Value: bson.D{
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "product_info.product_name", Value: bson.D{{
+						Key:   "$regex",
+						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+					bson.D{{Key: "product_info.brand_name", Value: bson.D{{
+						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+				}},
+			},
+		}}
+		insertIndex := 2
+		countPipeline = append(countPipeline[:insertIndex], append([]bson.D{countMatchFilter}, countPipeline[insertIndex:]...)...)
 
-		pipeline = append(pipeline, bson.D{{Key: "$match", Value: matchFilter}})
+		matchFilter := bson.D{{
+			Key: "$match",
+			Value: bson.D{
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "most_sold_product", Value: bson.D{{
+						Key:   "$regex",
+						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+					bson.D{{Key: "brand_name", Value: bson.D{{
+						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+				}},
+			},
+		}}
+		pipeline = append(pipeline, matchFilter)
+	}
+
+	countCursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), countPipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer countCursor.Close(c)
+
+	var countResult struct {
+		Count int `bson:"count"`
+	}
+	for countCursor.Next(c) {
+		if err := countCursor.Decode(&countResult); err != nil {
+			return nil, err
+		}
 	}
 
 	cursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), pipeline)

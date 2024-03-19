@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/aman-lf/sales-server/service"
+	"github.com/aman-lf/sales-server/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,9 +33,12 @@ func GetsalesHandler(c *gin.Context) {
 func GetSalesByProductHandler(c *gin.Context) {
 	limit := c.Query("limit")
 	offset := c.Query("offset")
+	sortBy := c.Query("sortBy")
+	sortOrder := c.Query("sortOrder")
 	searchText := c.Query("searchText")
+	pipelineFilter := utils.GetPipelineFilter(limit, offset, sortBy, "product_id", sortOrder, searchText)
 
-	sales, err := service.GetSalesByProduct(c, limit, offset, searchText)
+	sales, err := service.GetSalesByProduct(c, *pipelineFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,9 +53,12 @@ func GetSalesByProductHandler(c *gin.Context) {
 func GetSalesByBrandHandler(c *gin.Context) {
 	limit := c.Query("limit")
 	offset := c.Query("offset")
+	sortBy := c.Query("sortBy")
+	sortOrder := c.Query("sortOrder")
 	searchText := c.Query("searchText")
+	pipelineFilter := utils.GetPipelineFilter(limit, offset, sortBy, "_id", sortOrder, searchText)
 
-	sales, err := service.GetSalesByBrand(c, limit, offset, searchText)
+	sales, err := service.GetSalesByBrand(c, *pipelineFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
