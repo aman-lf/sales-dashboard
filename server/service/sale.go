@@ -126,7 +126,6 @@ func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model
 		},
 	}
 
-	filter.SearchText = "Sindee"
 	if filter.SearchText != "" {
 		countMatchFilter := bson.D{{
 			Key: "$match",
@@ -270,7 +269,6 @@ func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.S
 		}},
 	}
 
-	filter.SearchText = "Atonsah"
 	if filter.SearchText != "" {
 		countMatchFilter := bson.D{{
 			Key: "$match",
