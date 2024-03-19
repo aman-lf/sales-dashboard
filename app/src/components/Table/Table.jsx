@@ -7,11 +7,7 @@ const HeaderCell = ({ column, sorting, sortTable }) => {
   const isAscSorting = sorting.column === column.key && sorting.order === 'asc';
   const futureSortingOrder = isDescSorting ? 'asc' : 'desc';
   return (
-    <th
-      key={column.key}
-      className='table-cell'
-      onClick={() => sortTable({ column: column.key, order: futureSortingOrder })}
-    >
+    <th key={column.key} className='cell' onClick={() => sortTable({ column: column.key, order: futureSortingOrder })}>
       {column.label}
       {isDescSorting && <span>▼</span>}
       {isAscSorting && <span>▲</span>}
@@ -22,7 +18,7 @@ const HeaderCell = ({ column, sorting, sortTable }) => {
 const TableHeader = ({ columns, sorting, sortTable }) => {
   return (
     <thead>
-      <tr>
+      <tr className='row header'>
         {columns.map((column) => (
           <HeaderCell column={column} sorting={sorting} key={column.key} sortTable={sortTable} />
         ))}
@@ -35,9 +31,9 @@ const TableBody = ({ entries, columns }) => {
   return (
     <tbody>
       {entries.map((entry) => (
-        <tr key={entry.id}>
+        <tr className='row' key={entry.id}>
           {columns.map((column) => (
-            <td key={column.key} className='table-cell'>
+            <td key={column.key} className='cell'>
               {entry[column.key]}
             </td>
           ))}

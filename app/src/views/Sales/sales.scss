@@ -3,8 +3,10 @@
 .sales {
   padding: 32px;
   flex: 1;
+  background-color: #c4d3f6;
 
   @include e(title) {
     margin-bottom: 16px;
+    color: #072b63;
   }
 }

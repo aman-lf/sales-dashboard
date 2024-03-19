@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useOutletContext } from 'react-router-dom';
 
 import Toast from '../Toast/Toast';
 import Sidebar from '../Sidebar/Sidebar';
@@ -39,7 +39,7 @@ const AppLayout = () => {
       open: true,
     });
 
-    const timeout = setTimeout(() => {
+    setTimeout(() => {
       setToastProps({ open: false, message: '' });
     }, autoCloseDuration);
   };
@@ -53,5 +53,9 @@ const AppLayout = () => {
     </div>
   );
 };
+
+export function useLayoutContext() {
+  return useOutletContext();
+}
 
 export default AppLayout;
