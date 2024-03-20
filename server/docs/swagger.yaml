@@ -1,0 +1,90 @@
+info:
+  contact: {}
+paths:
+  /api/dashboard:
+    get:
+      description: Retrieve sales data for the dashboard
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved sales dashboard
+          schema:
+            type: object
+      summary: Get dashboard sales data
+  /api/sale:
+    get:
+      description: Retrieve all sales data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved sales
+          schema:
+            type: object
+      summary: Get all sales
+  /api/sale-brand:
+    get:
+      description: Retrieve sales data grouped by brand
+      parameters:
+      - description: Items per page
+        in: query
+        name: perPage
+        type: integer
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Field to sort by
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sortOrder
+        type: integer
+      - description: Text to search
+        in: query
+        name: searchText
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved sales by brand
+          schema:
+            type: object
+      summary: Get sales by brand
+  /api/sale-product:
+    get:
+      description: Retrieve sales data grouped by product
+      parameters:
+      - description: Items per page
+        in: query
+        name: perPage
+        type: integer
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Field to sort by
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sortOrder
+        type: integer
+      - description: Text to search
+        in: query
+        name: searchText
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved sales by product
+          schema:
+            type: object
+      summary: Get sales by product
+swagger: "2.0"

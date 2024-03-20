@@ -9,6 +9,9 @@ import (
 	"github.com/aman-lf/sales-server/database"
 	"github.com/aman-lf/sales-server/middleware"
 	"github.com/gin-gonic/gin"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func Start() {
@@ -23,6 +26,8 @@ func Start() {
 
 	addAPIRoutes(router)
 
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	ProcessFiles()
 
 	router.Run(fmt.Sprintf("%s:%s", config.Cfg.Host, config.Cfg.Port))
@@ -32,7 +37,7 @@ func addAPIRoutes(router *gin.Engine) {
 	router.GET("/", welcomeFunc)
 
 	controller.SetupProductRoute(router)
-	controller.SetupsaleRoute(router)
+	controller.SetupSaleRoute(router)
 	controller.SetupNotificationRoute(router)
 }
 
