@@ -5,7 +5,7 @@ import Sales from '../Sales/Sales';
 const Product = () => {
   const api = '/api/sale-product';
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'product_id', label: 'ID' },
     { key: 'product_name', label: 'Product Name' },
     { key: 'brand_name', label: 'Brand Name' },
     { key: 'category', label: 'Category' },

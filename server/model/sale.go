@@ -16,7 +16,7 @@ type Sale struct {
 }
 
 type SalesByProduct struct {
-	ProductId         string  `json:"id,omitempty" bson:"product_id,omitempty"`
+	ProductId         string  `json:"product_id,omitempty" bson:"product_id,omitempty"`
 	ProductName       string  `json:"product_name" bson:"product_name"`
 	BrandName         string  `json:"brand_name" bson:"brand_name"`
 	Category          string  `json:"category" bson:"category"`
