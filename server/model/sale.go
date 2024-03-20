@@ -33,6 +33,13 @@ type SalesByBrand struct {
 	TotalProfit       float64 `json:"total_profit" bson:"total_profit"`
 }
 
+type SaleDetails struct {
+	MostProfitableProduct  string `json:"most_profitable_product" bson:"most_profitable_product"`
+	LeastProfitableProduct string `json:"least_profitable_product" bson:"least_profitable_product"`
+	HighestSalesDate       string `json:"highest_sales_date" bson:"date_of_highest_sales"`
+	LeastSalesDate         string `json:"least_sales_date" bson:"date_of_least_sales"`
+}
+
 func (s Sale) CollectionName() string {
 	return "sale"
 }

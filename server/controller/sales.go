@@ -12,6 +12,7 @@ func SetupsaleRoute(router *gin.Engine) {
 	router.GET("/api/sale", GetsalesHandler)
 	router.GET("/api/sale-product", GetSalesByProductHandler)
 	router.GET("/api/sale-brand", GetSalesByBrandHandler)
+	router.GET("/api/dashboard", GetDashboardSalesHandler)
 }
 
 func GetsalesHandler(c *gin.Context) {
@@ -38,14 +39,14 @@ func GetSalesByProductHandler(c *gin.Context) {
 	searchText := c.Query("searchText")
 	pipelineFilter := utils.GetPipelineFilter(limit, page, sortBy, service.PRODUCT_DEFAULT_SORT, sortOrder, searchText)
 
-	sales, err := service.GetSalesByProduct(c, pipelineFilter)
+	data, err := service.GetSalesByProduct(c, pipelineFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":    sales,
+		"data":    data,
 		"meta":    pipelineFilter,
 		"message": "Successfully retrieved sales",
 	})
@@ -59,15 +60,28 @@ func GetSalesByBrandHandler(c *gin.Context) {
 	searchText := c.Query("searchText")
 	pipelineFilter := utils.GetPipelineFilter(limit, page, sortBy, service.BRAND_DEFAULT_SORT, sortOrder, searchText)
 
-	sales, err := service.GetSalesByBrand(c, pipelineFilter)
+	data, err := service.GetSalesByBrand(c, pipelineFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":    sales,
+		"data":    data,
 		"meta":    pipelineFilter,
+		"message": "Successfully retrieved sales",
+	})
+}
+
+func GetDashboardSalesHandler(c *gin.Context) {
+	data, err := service.GetDashboardData(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":    data,
 		"message": "Successfully retrieved sales",
 	})
 }

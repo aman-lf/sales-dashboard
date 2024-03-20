@@ -1,0 +1,21 @@
+@import '@sass/helpers/mixins';
+
+.dashboard {
+  padding: 32px;
+  flex: 1;
+
+  @include e(title) {
+    margin-bottom: 16px;
+    color: #072b63;
+  }
+
+  .card-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .card {
+    height: 200px;
+  }
+}

@@ -3,12 +3,11 @@ package service
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/aman-lf/sales-server/database"
 	"github.com/aman-lf/sales-server/model"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -17,211 +16,9 @@ const (
 	BRAND                = "brand"
 	PRODUCT_DEFAULT_SORT = "product_id"
 	BRAND_DEFAULT_SORT   = "brand_name"
+	MOST                 = "most"
+	LEAST                = "least"
 )
-
-func getCountPipeline(groupBy string, filter *model.PipelineParams) mongo.Pipeline {
-	var groupValue string
-	switch groupBy {
-	case PRODUCT:
-		groupValue = "$product_info.product_id"
-	case BRAND:
-		groupValue = "$product_info.brand_name"
-	}
-
-	countPipeline := mongo.Pipeline{
-		{{
-			Key: "$lookup",
-			Value: bson.D{
-				{Key: "from", Value: "product"},
-				{Key: "localField", Value: "product_id"},
-				{Key: "foreignField", Value: "product_id"},
-				{Key: "as", Value: "product_info"},
-			},
-		}},
-		{{
-			Key:   "$unwind",
-			Value: "$product_info",
-		}},
-		// Add match filter here
-		{{
-			Key: "$group",
-			Value: bson.D{
-				{Key: "_id", Value: groupValue},
-			},
-		}},
-		{{
-			Key: "$group",
-			Value: bson.D{
-				{Key: "_id", Value: nil},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			},
-		}},
-	}
-
-	if filter.SearchText != "" {
-		orCase := bson.A{
-			bson.D{{Key: "product_info.product_name", Value: bson.D{{
-				Key:   "$regex",
-				Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-			bson.D{{Key: "product_info.brand_name", Value: bson.D{{
-				Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-		}
-		if groupBy == PRODUCT {
-			orCase = append(orCase, bson.D{{Key: "product_info.category", Value: bson.D{{
-				Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}})
-		}
-
-		countMatchFilter := bson.D{{
-			Key: "$match",
-			Value: bson.D{
-				{Key: "$or", Value: orCase},
-			},
-		}}
-		insertIndex := 2
-		countPipeline = append(countPipeline[:insertIndex], append([]bson.D{countMatchFilter}, countPipeline[insertIndex:]...)...)
-	}
-
-	return countPipeline
-}
-
-func getSalesByProductPipeline(filter *model.PipelineParams) mongo.Pipeline {
-	pipeline := mongo.Pipeline{
-		{{
-			Key: "$group",
-			Value: bson.D{
-				{Key: "_id", Value: "$product_id"},
-				{Key: "total_quantity_sold", Value: bson.D{{Key: "$sum", Value: "$quantity"}}},
-				{Key: "total_revenue", Value: bson.D{{Key: "$sum", Value: "$total_transaction_amount"}}},
-			},
-		}},
-		{{
-			Key: "$lookup",
-			Value: bson.D{
-				{Key: "from", Value: "product"},
-				{Key: "localField", Value: "_id"},
-				{Key: "foreignField", Value: "product_id"},
-				{Key: "as", Value: "product_info"},
-			}},
-		},
-		{{Key: "$unwind", Value: "$product_info"}},
-		{{
-			Key: "$addFields",
-			Value: bson.D{
-				{Key: "product_id", Value: "$product_info.product_id"},
-				{Key: "product_name", Value: "$product_info.product_name"},
-				{Key: "brand_name", Value: "$product_info.brand_name"},
-				{Key: "category", Value: "$product_info.category"},
-				{Key: "total_profit", Value: bson.D{{Key: "$sum", Value: bson.D{
-					{Key: "$multiply", Value: bson.A{"$total_quantity_sold", bson.D{
-						{Key: "$subtract", Value: bson.A{"$product_info.selling_price", "$product_info.cost_price"}},
-					}},
-					}}}}},
-			}},
-		},
-		{{
-			Key: "$project",
-			Value: bson.D{
-				{Key: "_id", Value: 0}, // Exclude the original _id field if not needed
-				{Key: "product_id", Value: 1},
-				{Key: "total_quantity_sold", Value: 1},
-				{Key: "total_revenue", Value: 1},
-				{Key: "total_profit", Value: 1},
-				{Key: "product_name", Value: 1},
-				{Key: "brand_name", Value: 1},
-				{Key: "category", Value: 1},
-			}},
-		},
-		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
-		{{Key: "$skip", Value: filter.Offset}},
-		{{Key: "$limit", Value: filter.Limit}},
-	}
-
-	if filter.SearchText != "" {
-		matchFilter := bson.D{{
-			Key: "$match",
-			Value: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "product_name", Value: bson.D{{
-						Key:   "$regex",
-						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-					bson.D{{Key: "brand_name", Value: bson.D{{
-						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-					bson.D{{Key: "category", Value: bson.D{{
-						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-				}},
-			},
-		}}
-		insertIndex := 5
-		pipeline = append(pipeline[:insertIndex], append([]bson.D{matchFilter}, pipeline[insertIndex:]...)...)
-	}
-
-	return pipeline
-}
-
-func getSalesByBrandPipeline(filter *model.PipelineParams) mongo.Pipeline {
-	pipeline := mongo.Pipeline{
-		{{
-			Key: "$lookup",
-			Value: bson.D{
-				{Key: "from", Value: "product"},
-				{Key: "localField", Value: "product_id"},
-				{Key: "foreignField", Value: "product_id"},
-				{Key: "as", Value: "product_info"},
-			}},
-		},
-		{{
-			Key:   "$unwind",
-			Value: "$product_info",
-		}},
-		{{
-			Key: "$group",
-			Value: bson.D{
-				{Key: "_id", Value: "$product_info.brand_name"},
-				{Key: "most_sold_product", Value: bson.D{{Key: "$max", Value: "$product_info.product_name"}}},
-				{Key: "total_quantity_sold", Value: bson.D{{Key: "$sum", Value: "$quantity"}}},
-				{Key: "total_revenue", Value: bson.D{{Key: "$sum", Value: "$total_transaction_amount"}}},
-				{Key: "total_profit", Value: bson.D{{Key: "$sum", Value: bson.D{
-					{Key: "$multiply", Value: bson.A{"$quantity", bson.D{
-						{Key: "$subtract", Value: bson.A{"$product_info.selling_price", "$product_info.cost_price"}},
-					}},
-					}}}}},
-			},
-		}},
-		{{
-			Key: "$project",
-			Value: bson.D{
-				{Key: "_id", Value: 0}, // Exclude the original _id field if not needed
-				{Key: "brand_name", Value: "$_id"},
-				{Key: "most_sold_product", Value: 1},
-				{Key: "total_quantity_sold", Value: 1},
-				{Key: "total_revenue", Value: 1},
-				{Key: "total_profit", Value: 1},
-			},
-		}},
-		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
-		{{Key: "$skip", Value: filter.Offset}},
-		{{Key: "$limit", Value: filter.Limit}},
-	}
-
-	if filter.SearchText != "" {
-		matchFilter := bson.D{{
-			Key: "$match",
-			Value: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "most_sold_product", Value: bson.D{{
-						Key:   "$regex",
-						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-					bson.D{{Key: "brand_name", Value: bson.D{{
-						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-				}},
-			},
-		}}
-		insertIndex := 4
-		pipeline = append(pipeline[:insertIndex], append([]bson.D{matchFilter}, pipeline[insertIndex:]...)...)
-	}
-
-	return pipeline
-}
 
 func GetSales(c context.Context, limitStr, offsetStr string) ([]*model.Sale, error) {
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
@@ -333,4 +130,82 @@ func GetSalesByBrand(c context.Context, filter *model.PipelineParams) ([]*model.
 	}
 
 	return sales, nil
+}
+
+func GetDashboardData(c context.Context) (*model.SaleDetails, error) {
+	type profitData struct {
+		ProductName string  `bson:"product_name"`
+		TotalProfit float64 `bson:"total_profit"`
+	}
+
+	mostProfitPipeline := getProductProfitPipeline(MOST)
+	cursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), mostProfitPipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var mostProfit profitData
+	for cursor.Next(c) {
+		if err := cursor.Decode(&mostProfit); err != nil {
+			return nil, err
+		}
+	}
+
+	leastProfitPipeline := getProductProfitPipeline(LEAST)
+	cursor, err = database.FindAggregate(c, model.Sale{}.CollectionName(), leastProfitPipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var leastProfit profitData
+	for cursor.Next(c) {
+		if err := cursor.Decode(&leastProfit); err != nil {
+			return nil, err
+		}
+	}
+
+	type saleData struct {
+		TransactionDate time.Time `bson:"transaction_date"`
+		TotalSales      int       `bson:"total_sales"`
+	}
+
+	mostSalePipeline := salesDatePipeline(MOST)
+	cursor, err = database.FindAggregate(c, model.Sale{}.CollectionName(), mostSalePipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var mostSale saleData
+	for cursor.Next(c) {
+		if err := cursor.Decode(&mostSale); err != nil {
+			return nil, err
+		}
+	}
+
+	leastSalePipeline := salesDatePipeline(LEAST)
+	cursor, err = database.FindAggregate(c, model.Sale{}.CollectionName(), leastSalePipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	var leastSale saleData
+	for cursor.Next(c) {
+		if err := cursor.Decode(&leastSale); err != nil {
+			return nil, err
+		}
+	}
+
+	mostSaletransactionDate := mostSale.TransactionDate.Format("2006-01-02")
+	leastSaletransactionDate := leastSale.TransactionDate.Format("2006-01-02")
+
+	return &model.SaleDetails{
+		MostProfitableProduct:  mostProfit.ProductName,
+		LeastProfitableProduct: leastProfit.ProductName,
+		HighestSalesDate:       mostSaletransactionDate,
+		LeastSalesDate:         leastSaletransactionDate,
+	}, nil
 }
