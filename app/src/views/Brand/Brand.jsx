@@ -12,9 +12,7 @@ const Brand = () => {
     { key: 'total_profit', label: 'Total Profit' },
   ];
 
-  const searchColumns = ['brand_name', 'most_sold_product'];
-
-  return <Sales title={'Sales By Product'} api={api} columns={columns} searchColumns={searchColumns} />;
+  return <Sales title={'Sales By Brand'} api={api} columns={columns} />;
 };
 
 export default Brand;

@@ -6,14 +6,14 @@ import (
 	"github.com/aman-lf/sales-server/model"
 )
 
-func GetPipelineFilter(limitStr, offsetStr, sortByStr, defaultSort, sortOrderStr, searchText string) *model.PipelineParams {
+func GetPipelineFilter(limitStr, pageStr, sortByStr, defaultSort, sortOrderStr, searchText string) *model.PipelineParams {
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
 	if err != nil {
 		limit = 20
 	}
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		offset = 0
+	page, err := strconv.ParseInt(pageStr, 10, 64)
+	if err != nil || page < 1 {
+		page = 1
 	}
 	sortBy := sortByStr
 	if sortBy == "" {
@@ -28,7 +28,7 @@ func GetPipelineFilter(limitStr, offsetStr, sortByStr, defaultSort, sortOrderStr
 
 	return &model.PipelineParams{
 		Limit:      limit,
-		Offset:     offset,
+		Page:       page,
 		SortBy:     sortBy,
 		SortOrder:  sortOrder,
 		SearchText: searchText,

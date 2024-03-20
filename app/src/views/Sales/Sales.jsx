@@ -1,21 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import Table from '../../components/Table/Table';
 import Loading from '../../components/Loading/Loading';
 import SearchBox from '../../components/SearchBox/SearchBox';
-
-import './sales.scss';
 import Pagination from '../../components/Pagination/Pagination';
 
+import { defaultPerPage } from '../../constants/table';
+
+import { fetchData } from '../../utils/fetch';
+
+import './sales.scss';
+
 const Sales = ({ title, api, columns }) => {
-  const { isPending, error, data } = useQuery({
-    queryKey: ['sales'],
-    queryFn: () => fetch(`${import.meta.env.VITE_API_URL}${api}`).then((res) => res.json()),
+  const [params, setParams] = useState({
+    perPage: defaultPerPage,
+    page: 1,
+    sortBy: '',
+    sortOrder: '1',
+    searchText: '',
   });
 
-  const onSearch = (text) => {
-    console.log(text);
+  const { isPending, error, data } = useQuery({
+    queryKey: ['sales', params],
+    queryFn: () => fetchData(api, params),
+  });
+
+  const onSearch = (searchText) => {
+    setParams({ ...params, searchText });
+  };
+
+  const onPageSizeChange = (perPage) => {
+    setParams({ ...params, perPage });
+  };
+
+  const onPageChange = (page) => {
+    setParams({ ...params, page });
+  };
+
+  const onSort = (sortBy, sortOrder) => {
+    setParams({ ...params, sortBy, sortOrder });
   };
 
   if (error) {
@@ -33,8 +57,20 @@ const Sales = ({ title, api, columns }) => {
           <Loading />
         ) : (
           <>
-            <Table data={data.data} columns={columns} />
-            <Pagination currentPage={1} totalPages={5} onPageChange='' pageSize={20} onPageSizeChange='' />
+            <Table
+              data={data.data}
+              columns={columns}
+              sortBy={data.meta.sortBy}
+              sortOrder={data.meta.sortOrder}
+              onSort={onSort}
+            />
+            <Pagination
+              currentPage={params.page}
+              totalPages={data.meta.totalPage}
+              onPageChange={onPageChange}
+              pageSize={params.perPage}
+              onPageSizeChange={onPageSizeChange}
+            />
           </>
         )}
       </div>

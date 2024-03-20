@@ -12,39 +12,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetSales(c context.Context, limitStr, offsetStr string) ([]*model.Sale, error) {
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		limit = 20
-	}
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		offset = 0
-	}
+const (
+	PRODUCT              = "product"
+	BRAND                = "brand"
+	PRODUCT_DEFAULT_SORT = "product_id"
+	BRAND_DEFAULT_SORT   = "brand_name"
+)
 
-	findOptions := options.Find().SetLimit(limit).SetSkip(offset).SetSort(bson.D{{Key: "_id", Value: 1}})
-
-	filter := bson.M{}
-	sales := []*model.Sale{}
-
-	cursor, err := database.Find(c, model.Sale{}.CollectionName(), filter, findOptions)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(c)
-
-	for cursor.Next(c) {
-		var sale model.Sale
-		if err := cursor.Decode(&sale); err != nil {
-			return nil, err
-		}
-		sales = append(sales, &sale)
+func getCountPipeline(groupBy string, filter *model.PipelineParams) mongo.Pipeline {
+	var groupValue string
+	switch groupBy {
+	case PRODUCT:
+		groupValue = "$product_info.product_id"
+	case BRAND:
+		groupValue = "$product_info.brand_name"
 	}
 
-	return sales, nil
-}
-
-func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model.SalesByProduct, error) {
 	countPipeline := mongo.Pipeline{
 		{{
 			Key: "$lookup",
@@ -63,7 +46,7 @@ func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model
 		{{
 			Key: "$group",
 			Value: bson.D{
-				{Key: "_id", Value: "$product_info.product_id"},
+				{Key: "_id", Value: groupValue},
 			},
 		}},
 		{{
@@ -75,6 +58,33 @@ func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model
 		}},
 	}
 
+	if filter.SearchText != "" {
+		orCase := bson.A{
+			bson.D{{Key: "product_info.product_name", Value: bson.D{{
+				Key:   "$regex",
+				Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+			bson.D{{Key: "product_info.brand_name", Value: bson.D{{
+				Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
+		}
+		if groupBy == PRODUCT {
+			orCase = append(orCase, bson.D{{Key: "product_info.category", Value: bson.D{{
+				Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}})
+		}
+
+		countMatchFilter := bson.D{{
+			Key: "$match",
+			Value: bson.D{
+				{Key: "$or", Value: orCase},
+			},
+		}}
+		insertIndex := 2
+		countPipeline = append(countPipeline[:insertIndex], append([]bson.D{countMatchFilter}, countPipeline[insertIndex:]...)...)
+	}
+
+	return countPipeline
+}
+
+func getSalesByProductPipeline(filter *model.PipelineParams) mongo.Pipeline {
 	pipeline := mongo.Pipeline{
 		{{
 			Key: "$group",
@@ -108,9 +118,6 @@ func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model
 					}}}}},
 			}},
 		},
-		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
-		{{Key: "$skip", Value: filter.Offset}},
-		{{Key: "$limit", Value: filter.Limit}},
 		{{
 			Key: "$project",
 			Value: bson.D{
@@ -124,26 +131,12 @@ func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model
 				{Key: "category", Value: 1},
 			}},
 		},
+		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
+		{{Key: "$skip", Value: filter.Offset}},
+		{{Key: "$limit", Value: filter.Limit}},
 	}
 
 	if filter.SearchText != "" {
-		countMatchFilter := bson.D{{
-			Key: "$match",
-			Value: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "product_info.product_name", Value: bson.D{{
-						Key:   "$regex",
-						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-					bson.D{{Key: "product_info.brand_name", Value: bson.D{{
-						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-					bson.D{{Key: "product_info.category", Value: bson.D{{
-						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-				}},
-			},
-		}}
-		insertIndex := 2
-		countPipeline = append(countPipeline[:insertIndex], append([]bson.D{countMatchFilter}, countPipeline[insertIndex:]...)...)
-
 		matchFilter := bson.D{{
 			Key: "$match",
 			Value: bson.D{
@@ -158,73 +151,14 @@ func GetSalesByProduct(c context.Context, filter model.PipelineParams) ([]*model
 				}},
 			},
 		}}
-		pipeline = append(pipeline, matchFilter)
+		insertIndex := 5
+		pipeline = append(pipeline[:insertIndex], append([]bson.D{matchFilter}, pipeline[insertIndex:]...)...)
 	}
 
-	countCursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), countPipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer countCursor.Close(c)
-
-	var countResult struct {
-		Count int `bson:"count"`
-	}
-	for countCursor.Next(c) {
-		if err := countCursor.Decode(&countResult); err != nil {
-			return nil, err
-		}
-	}
-
-	cursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(c)
-
-	sales := []*model.SalesByProduct{}
-	for cursor.Next(c) {
-		var sale model.SalesByProduct
-		if err := cursor.Decode(&sale); err != nil {
-			return nil, err
-		}
-		sales = append(sales, &sale)
-	}
-
-	return sales, nil
+	return pipeline
 }
 
-func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.SalesByBrand, error) {
-	countPipeline := mongo.Pipeline{
-		{{
-			Key: "$lookup",
-			Value: bson.D{
-				{Key: "from", Value: "product"},
-				{Key: "localField", Value: "product_id"},
-				{Key: "foreignField", Value: "product_id"},
-				{Key: "as", Value: "product_info"},
-			},
-		}},
-		{{
-			Key:   "$unwind",
-			Value: "$product_info",
-		}},
-		// Add match filter here
-		{{
-			Key: "$group",
-			Value: bson.D{
-				{Key: "_id", Value: "$product_info.brand_name"},
-			},
-		}},
-		{{
-			Key: "$group",
-			Value: bson.D{
-				{Key: "_id", Value: nil},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			},
-		}},
-	}
-
+func getSalesByBrandPipeline(filter *model.PipelineParams) mongo.Pipeline {
 	pipeline := mongo.Pipeline{
 		{{
 			Key: "$lookup",
@@ -253,9 +187,6 @@ func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.S
 					}}}}},
 			},
 		}},
-		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
-		{{Key: "$skip", Value: filter.Offset}},
-		{{Key: "$limit", Value: filter.Limit}},
 		{{
 			Key: "$project",
 			Value: bson.D{
@@ -267,24 +198,12 @@ func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.S
 				{Key: "total_profit", Value: 1},
 			},
 		}},
+		{{Key: "$sort", Value: bson.D{{Key: filter.SortBy, Value: filter.SortOrder}}}},
+		{{Key: "$skip", Value: filter.Offset}},
+		{{Key: "$limit", Value: filter.Limit}},
 	}
 
 	if filter.SearchText != "" {
-		countMatchFilter := bson.D{{
-			Key: "$match",
-			Value: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "product_info.product_name", Value: bson.D{{
-						Key:   "$regex",
-						Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-					bson.D{{Key: "product_info.brand_name", Value: bson.D{{
-						Key: "$regex", Value: primitive.Regex{Pattern: filter.SearchText, Options: "i"}}}}},
-				}},
-			},
-		}}
-		insertIndex := 2
-		countPipeline = append(countPipeline[:insertIndex], append([]bson.D{countMatchFilter}, countPipeline[insertIndex:]...)...)
-
 		matchFilter := bson.D{{
 			Key: "$match",
 			Value: bson.D{
@@ -297,9 +216,47 @@ func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.S
 				}},
 			},
 		}}
-		pipeline = append(pipeline, matchFilter)
+		insertIndex := 4
+		pipeline = append(pipeline[:insertIndex], append([]bson.D{matchFilter}, pipeline[insertIndex:]...)...)
 	}
 
+	return pipeline
+}
+
+func GetSales(c context.Context, limitStr, offsetStr string) ([]*model.Sale, error) {
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		limit = 20
+	}
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		offset = 0
+	}
+
+	findOptions := options.Find().SetLimit(limit).SetSkip(offset).SetSort(bson.D{{Key: "_id", Value: 1}})
+
+	filter := bson.M{}
+	sales := []*model.Sale{}
+
+	cursor, err := database.Find(c, model.Sale{}.CollectionName(), filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	for cursor.Next(c) {
+		var sale model.Sale
+		if err := cursor.Decode(&sale); err != nil {
+			return nil, err
+		}
+		sales = append(sales, &sale)
+	}
+
+	return sales, nil
+}
+
+func GetSalesByProduct(c context.Context, filter *model.PipelineParams) ([]*model.SalesByProduct, error) {
+	countPipeline := getCountPipeline(PRODUCT, filter)
 	countCursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), countPipeline)
 	if err != nil {
 		return nil, err
@@ -315,6 +272,51 @@ func GetSalesByBrand(c context.Context, filter model.PipelineParams) ([]*model.S
 		}
 	}
 
+	filter.CalculateTotalPageCount(countResult.Count)
+	filter.VerifyPage()
+	filter.CalculateOffset()
+
+	pipeline := getSalesByProductPipeline(filter)
+	cursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(c)
+
+	sales := []*model.SalesByProduct{}
+	for cursor.Next(c) {
+		var sale model.SalesByProduct
+		if err := cursor.Decode(&sale); err != nil {
+			return nil, err
+		}
+		sales = append(sales, &sale)
+	}
+
+	return sales, nil
+}
+
+func GetSalesByBrand(c context.Context, filter *model.PipelineParams) ([]*model.SalesByBrand, error) {
+	countPipeline := getCountPipeline(BRAND, filter)
+	countCursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), countPipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer countCursor.Close(c)
+
+	var countResult struct {
+		Count int `bson:"count"`
+	}
+	for countCursor.Next(c) {
+		if err := countCursor.Decode(&countResult); err != nil {
+			return nil, err
+		}
+	}
+
+	filter.CalculateTotalPageCount(countResult.Count)
+	filter.VerifyPage()
+	filter.CalculateOffset()
+
+	pipeline := getSalesByBrandPipeline(filter)
 	cursor, err := database.FindAggregate(c, model.Sale{}.CollectionName(), pipeline)
 	if err != nil {
 		return nil, err

@@ -12,11 +12,12 @@
     .cell {
       font-family: Poppins-Regular;
       font-size: 15px;
+      font-weight: bold;
       color: #fff;
       line-height: 1.2;
-      font-weight: unset !important;
       padding-top: 12px;
       padding-bottom: 12px;
+      padding-right: 15px;
       cursor: pointer;
     }
 
@@ -31,10 +32,9 @@
 
   .cell {
     font-family: Poppins-Regular;
-    font-size: 14px;
+    font-size: 15px;
     color: #666;
     line-height: 1.2;
-    font-weight: unset !important;
     padding-top: 8px;
     padding-bottom: 8px;
     border-bottom: 1px solid #f2f2f2;
@@ -43,8 +43,12 @@
   .row .cell:nth-child(1) {
     padding-left: 40px;
   }
-}
 
-.search-bar {
-  margin-bottom: 20px;
+  .no-data {
+    background-color: white;
+    padding: 12px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: bold;
+  }
 }

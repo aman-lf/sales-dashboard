@@ -14,9 +14,7 @@ const Product = () => {
     { key: 'total_profit', label: 'Total Profit' },
   ];
 
-  const searchColumns = ['product_name', 'brand_name', 'category'];
-
-  return <Sales title={'Sales By Product'} api={api} columns={columns} searchColumns={searchColumns} />;
+  return <Sales title={'Sales By Product'} api={api} columns={columns} />;
 };
 
 export default Product;

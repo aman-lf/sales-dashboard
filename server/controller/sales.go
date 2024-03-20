@@ -31,14 +31,14 @@ func GetsalesHandler(c *gin.Context) {
 }
 
 func GetSalesByProductHandler(c *gin.Context) {
-	limit := c.Query("limit")
-	offset := c.Query("offset")
+	limit := c.Query("perPage")
+	page := c.Query("page")
 	sortBy := c.Query("sortBy")
 	sortOrder := c.Query("sortOrder")
 	searchText := c.Query("searchText")
-	pipelineFilter := utils.GetPipelineFilter(limit, offset, sortBy, "product_id", sortOrder, searchText)
+	pipelineFilter := utils.GetPipelineFilter(limit, page, sortBy, service.PRODUCT_DEFAULT_SORT, sortOrder, searchText)
 
-	sales, err := service.GetSalesByProduct(c, *pipelineFilter)
+	sales, err := service.GetSalesByProduct(c, pipelineFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -46,19 +46,20 @@ func GetSalesByProductHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    sales,
+		"meta":    pipelineFilter,
 		"message": "Successfully retrieved sales",
 	})
 }
 
 func GetSalesByBrandHandler(c *gin.Context) {
-	limit := c.Query("limit")
-	offset := c.Query("offset")
+	limit := c.Query("perPage")
+	page := c.Query("page")
 	sortBy := c.Query("sortBy")
 	sortOrder := c.Query("sortOrder")
 	searchText := c.Query("searchText")
-	pipelineFilter := utils.GetPipelineFilter(limit, offset, sortBy, "_id", sortOrder, searchText)
+	pipelineFilter := utils.GetPipelineFilter(limit, page, sortBy, service.BRAND_DEFAULT_SORT, sortOrder, searchText)
 
-	sales, err := service.GetSalesByBrand(c, *pipelineFilter)
+	sales, err := service.GetSalesByBrand(c, pipelineFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -66,6 +67,7 @@ func GetSalesByBrandHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data":    sales,
+		"meta":    pipelineFilter,
 		"message": "Successfully retrieved sales",
 	})
 }

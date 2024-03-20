@@ -1,5 +1,7 @@
 package model
 
+import "math"
+
 type SortOrder int
 
 const (
@@ -8,9 +10,26 @@ const (
 )
 
 type PipelineParams struct {
-	Limit      int64     `json:"limit" form:"limit"`
-	Offset     int64     `json:"offset" form:"offset"`
-	SortBy     string    `json:"sortBy" form:"sortBy"`
-	SortOrder  SortOrder `json:"sortOrder" form:"sortOrder"`
-	SearchText string    `json:"searchText" form:"searchText"`
+	Limit      int64     `json:"limit"`
+	Offset     int64     `json:"offset"`
+	Page       int64     `json:"page"`
+	TotalPage  int64     `json:"totalPage"`
+	SortBy     string    `json:"sortBy"`
+	SortOrder  SortOrder `json:"sortOrder"`
+	SearchText string    `json:"searchText"`
+}
+
+func (p *PipelineParams) CalculateTotalPageCount(count int) {
+	totalPage := math.Ceil(float64(count) / float64(p.Limit))
+	p.TotalPage = int64(math.Max(totalPage, 1))
+}
+
+func (p *PipelineParams) VerifyPage() {
+	if p.Page > p.TotalPage {
+		p.Page = p.TotalPage
+	}
+}
+
+func (p *PipelineParams) CalculateOffset() {
+	p.Offset = p.Limit * (p.Page - 1)
 }
