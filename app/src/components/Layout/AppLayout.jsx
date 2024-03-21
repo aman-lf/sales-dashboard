@@ -1,26 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { Outlet, useOutletContext } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
 
-import Toast from '../Toast/Toast';
-import Sidebar from '../Sidebar/Sidebar';
+import Toast from '@/components/Toast';
+import Sidebar from '@/components/Sidebar';
+
+import { api } from '@/constants/api';
 
 import './layout.scss';
 
 const AppLayout = () => {
-  const [showSidebar, setShowSidebar] = useState(true);
+  const showSidebar = true;
   const [toastProps, setToastProps] = useState({
     message: '',
     open: false,
   });
 
   useEffect(() => {
-    const sse = new EventSource(`${import.meta.env.VITE_API_URL}/new-file-notification`);
+    const sse = new EventSource(`${import.meta.env.VITE_API_URL}${api.NOTIFICATON}`);
     sse.onmessage = (e) => {
       const message = JSON.parse(e.data).message;
       if (message) showToast(JSON.parse(e.data).message);
     };
     sse.onerror = () => {
-      // error log here
       console.log('sse error');
       sse.close();
     };
@@ -28,10 +29,6 @@ const AppLayout = () => {
       sse.close();
     };
   }, []);
-
-  const hideSidebar = () => {
-    setShowSidebar(false);
-  };
 
   const showToast = (message, autoCloseDuration = 5000) => {
     setToastProps({
@@ -49,13 +46,9 @@ const AppLayout = () => {
       <Toast open={toastProps.open} message={toastProps.message} />
 
       {showSidebar ? <Sidebar /> : null}
-      <Outlet context={{ hideSidebar, showToast }} />
+      <Outlet />
     </div>
   );
 };
-
-export function useLayoutContext() {
-  return useOutletContext();
-}
 
 export default AppLayout;

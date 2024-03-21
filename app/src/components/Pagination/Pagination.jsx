@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { paginationPerPageOption } from '../../constants/table';
 
 import './pagination.scss';

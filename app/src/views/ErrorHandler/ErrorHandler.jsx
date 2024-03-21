@@ -1,5 +1,3 @@
-import React from 'react';
-
 import '@sass/errorHandler.scss';
 
 const ErrorHandler = () => {

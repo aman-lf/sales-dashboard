@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import Table from '../../components/Table/Table';
-import Loading from '../../components/Loading/Loading';
-import SearchBox from '../../components/SearchBox/SearchBox';
-import Pagination from '../../components/Pagination/Pagination';
+import Table from '@/components/Table/Table';
+import Loading from '@/components/Loading/Loading';
+import SearchBox from '@/components/SearchBox/SearchBox';
+import Pagination from '@/components/Pagination/Pagination';
 
-import { defaultPerPage } from '../../constants/table';
+import { defaultPerPage } from '@/constants/table';
 
-import { fetchData } from '../../utils/fetch';
+import { fetchData } from '@/utils/fetch';
 
 import './sales.scss';
 
@@ -42,8 +42,31 @@ const Sales = ({ title, api, columns }) => {
     setParams({ ...params, sortBy, sortOrder });
   };
 
-  if (error) {
+  let content;
+  if (isPending) {
+    content = <Loading />;
+  } else if (error) {
     console.log(error.message);
+    content = <div className='api-failed'>Error fetching data</div>;
+  } else {
+    content = (
+      <>
+        <Table
+          data={data.data}
+          columns={columns}
+          sortBy={data.meta.sortBy}
+          sortOrder={data.meta.sortOrder}
+          onSort={onSort}
+        />
+        <Pagination
+          currentPage={params.page}
+          totalPages={data.meta.totalPage}
+          onPageChange={onPageChange}
+          pageSize={params.perPage}
+          onPageSizeChange={onPageSizeChange}
+        />
+      </>
+    );
   }
 
   return (
@@ -52,28 +75,7 @@ const Sales = ({ title, api, columns }) => {
       <div>
         <SearchBox onClick={onSearch} />
       </div>
-      <div>
-        {isPending ? (
-          <Loading />
-        ) : (
-          <>
-            <Table
-              data={data.data}
-              columns={columns}
-              sortBy={data.meta.sortBy}
-              sortOrder={data.meta.sortOrder}
-              onSort={onSort}
-            />
-            <Pagination
-              currentPage={params.page}
-              totalPages={data.meta.totalPage}
-              onPageChange={onPageChange}
-              pageSize={params.perPage}
-              onPageSizeChange={onPageSizeChange}
-            />
-          </>
-        )}
-      </div>
+      <div>{content}</div>
     </div>
   );
 };

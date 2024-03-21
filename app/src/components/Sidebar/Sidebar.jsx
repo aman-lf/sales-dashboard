@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import BrandIcon from '@images/brand_icon.png';

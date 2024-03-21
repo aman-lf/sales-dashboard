@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 import './table.scss';
 
 const HeaderCell = ({ column, sorting, sortTable }) => {

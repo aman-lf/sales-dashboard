@@ -1,5 +1,3 @@
-import React from 'react';
-
 import LoadingIcon from '@images/loading.gif';
 
 const Loading = () => {

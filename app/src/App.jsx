@@ -3,10 +3,12 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import Brand from './views/Brand';
 import Product from './views/Products';
+import NotFound from './views/NotFound';
 import Dashboard from './views/Dashboard';
 import AppLayout from './components/Layout/AppLayout';
 
 import { PATHS } from './constants/routes';
+
 import { queryClient } from './config/react-query.config';
 
 import './assets/sass/main.scss';
@@ -21,6 +23,7 @@ function App() {
             <Route path={PATHS.PRODUCTS_PATH} element={<Product />} />
             <Route path={PATHS.BRAND_PATH} element={<Brand />} />
           </Route>
+          <Route path='*' element={<NotFound />} />
         </Routes>
       </QueryClientProvider>
     </div>

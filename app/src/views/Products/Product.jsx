@@ -1,9 +1,9 @@
-import React from 'react';
+import Sales from '@/views/Sales';
 
-import Sales from '../Sales/Sales';
+import { api } from '@/constants/api';
+import { title } from '@/constants/title';
 
 const Product = () => {
-  const api = '/api/sale-product';
   const columns = [
     { key: 'product_id', label: 'ID' },
     { key: 'product_name', label: 'Product Name' },
@@ -14,7 +14,7 @@ const Product = () => {
     { key: 'total_profit', label: 'Total Profit' },
   ];
 
-  return <Sales title={'Sales By Product'} api={api} columns={columns} />;
+  return <Sales title={title.SALES_PRODUCT} api={api.SALES_PRODUCT} columns={columns} />;
 };
 
 export default Product;
