@@ -5,6 +5,7 @@ import (
 
 	"github.com/aman-lf/sales-server/service"
 	"github.com/aman-lf/sales-server/utils"
+	"github.com/aman-lf/sales-server/utils/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +27,7 @@ func GetsalesHandler(c *gin.Context) {
 
 	sales, err := service.GetSales(c, limit, offset)
 	if err != nil {
+		logger.Error("Failed to get sales", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -56,6 +58,7 @@ func GetSalesByProductHandler(c *gin.Context) {
 
 	data, err := service.GetSalesByProduct(c, pipelineFilter)
 	if err != nil {
+		logger.Error("Failed to get sales by product", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -87,6 +90,7 @@ func GetSalesByBrandHandler(c *gin.Context) {
 
 	data, err := service.GetSalesByBrand(c, pipelineFilter)
 	if err != nil {
+		logger.Error("Failed to get sales by brand", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -106,6 +110,7 @@ func GetSalesByBrandHandler(c *gin.Context) {
 func GetDashboardSalesHandler(c *gin.Context) {
 	data, err := service.GetDashboardData(c)
 	if err != nil {
+		logger.Error("Failed to get dashboard data", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

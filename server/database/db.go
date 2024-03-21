@@ -2,10 +2,9 @@ package database
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	"github.com/aman-lf/sales-server/config"
+	"github.com/aman-lf/sales-server/utils/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -22,15 +21,15 @@ func ConnectDB() {
 	clientOptions := options.Client().ApplyURI(config.Cfg.MongoURI)
 	client, err = mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err.Error())
 	}
 
 	// Check the connection.
 	err = client.Ping(context.Background(), nil)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err.Error())
 	} else {
-		fmt.Println("Connected to mongoDB!!!")
+		logger.Info("Connected to mongoDB!")
 	}
 
 	createUniqueIndex()

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/aman-lf/sales-server/service"
+	"github.com/aman-lf/sales-server/utils/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +18,7 @@ func GetProductsHandler(c *gin.Context) {
 
 	products, err := service.GetProducts(c, limit, offset)
 	if err != nil {
+		logger.Error("Failed to get products", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

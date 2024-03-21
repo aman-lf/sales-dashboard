@@ -12,6 +12,7 @@ import (
 	"github.com/aman-lf/sales-server/model"
 	"github.com/aman-lf/sales-server/service"
 	"github.com/aman-lf/sales-server/utils"
+	"github.com/aman-lf/sales-server/utils/logger"
 )
 
 func ProcessProducts(path string) {
@@ -26,7 +27,7 @@ func ProcessProducts(path string) {
 			i--
 			time.Sleep(time.Duration(sleepTime) * time.Second)
 		} else {
-			fmt.Println("Processed product file:", filename)
+			logger.Info(fmt.Sprintf("Processed product file: %s", filename))
 			service.TriggerSSEMessages("New data is available! Please refresh the page.")
 		}
 	}
@@ -42,7 +43,7 @@ func processProductData(filepath string) error {
 	reader := csv.NewReader(file)
 	header, err := reader.Read()
 	if err != nil {
-		fmt.Printf("Error reading CSV header: %v\n", err)
+		logger.Info(fmt.Sprintf("Error reading CSV header: %v\n", err))
 		return err
 	}
 
