@@ -12,6 +12,30 @@ paths:
           schema:
             type: object
       summary: Get dashboard sales data
+  /api/product:
+    get:
+      description: Retrieve all products data
+      parameters:
+      - description: Limit number of products per page
+        in: query
+        name: limit
+        type: integer
+      - description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved products
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: Get all products
   /api/sale:
     get:
       description: Retrieve all sales data
@@ -87,4 +111,11 @@ paths:
           schema:
             type: object
       summary: Get sales by product
+  /new-file-notification:
+    get:
+      description: Initiates a connection for Server-Sent Events (SSE) with the client
+      produces:
+      - text/plain
+      responses: {}
+      summary: Establish a Server-Sent Events (SSE) connection
 swagger: "2.0"

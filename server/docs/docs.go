@@ -32,6 +32,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/product": {
+            "get": {
+                "description": "Retrieve all products data",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get all products",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit number of products per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved products",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/api/sale": {
             "get": {
                 "description": "Retrieve all sales data",
@@ -145,6 +182,16 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/new-file-notification": {
+            "get": {
+                "description": "Initiates a connection for Server-Sent Events (SSE) with the client",
+                "produces": [
+                    "text/plain"
+                ],
+                "summary": "Establish a Server-Sent Events (SSE) connection",
+                "responses": {}
             }
         }
     }
