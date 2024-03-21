@@ -12,9 +12,9 @@ A Dashboard to display sales report for each product and brands
    git clone git@github.com:shahsuman438/SALES-DASH.git
    ```
 
-## setup FE
+## Setup FE
 
-- **move to app dir:**
+- **Move to app dir:**
 
   ```bash
   cd app
@@ -28,13 +28,20 @@ A Dashboard to display sales report for each product and brands
 
   ```
 
-- **run app:**
+- **Run app:**
 
   ```bash
   yarn dev
   ```
 
-### setup BE
+### Setup BE
+
+- **Move to server dir:**
+
+  ```bash
+  cd server
+
+  ```
 
 - **Install dependencies:**
 
