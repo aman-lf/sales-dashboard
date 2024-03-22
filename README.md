@@ -9,7 +9,7 @@ A Dashboard to display sales report for each product and brands
 1. **Clone the repository:**
 
    ```bash
-   git clone git@github.com:shahsuman438/SALES-DASH.git
+   git clone https://github.com/aman-lf/sales-dashboard.git
    ```
 
 ## Setup FE
